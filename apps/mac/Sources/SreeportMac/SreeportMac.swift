@@ -8,7 +8,7 @@ struct SreeportMacApp: App {
     var body: some Scene {
         MenuBarExtra {
             SreeportMenu(model: model)
-                .frame(width: 460, height: 640)
+                .frame(width: 480, height: 720)
                 .onAppear {
                     model.refresh()
                 }
@@ -56,6 +56,7 @@ struct SreeportMenu: View {
             .background(.quaternary, in: RoundedRectangle(cornerRadius: 10))
 
             ActionBar(model: model)
+            OutputPanel(model: model)
 
             HStack {
                 Text("Projects")
@@ -80,9 +81,7 @@ struct SreeportMenu: View {
                 }
                 .padding(.vertical, 2)
             }
-            .frame(minHeight: 260, maxHeight: 330)
-
-            OutputPanel(model: model)
+            .frame(minHeight: 150, maxHeight: 190)
         }
         .padding(18)
         .background(Color(nsColor: .windowBackgroundColor))
@@ -214,7 +213,7 @@ struct ActionBar: View {
     @ObservedObject var model: SreeportModel
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 8) {
             HStack(spacing: 8) {
                 PrimaryActionButton(title: "Start All", systemName: "play.fill", tone: .green, isLoading: model.isRunning("start all")) {
                     model.run("start", "all")
@@ -227,9 +226,59 @@ struct ActionBar: View {
                 }
             }
 
-            ProxyControlCard(model: model)
-            WorkspaceToolsPanel(model: model)
+            HStack(spacing: 8) {
+                ProxyInlineStatus(model: model)
+                CompactActionButton(title: "Proxy", systemName: "arrow.clockwise", tone: .blue, isLoading: model.isRunning("proxy restart")) {
+                    model.run("proxy", "restart")
+                }
+                CompactActionButton(title: "Status", systemName: "wave.3.right", tone: .primary, subtle: true, isLoading: model.isRunning("proxy status")) {
+                    model.showProxyStatus()
+                }
+                CompactActionButton(title: "Doctor", systemName: "stethoscope", tone: .orange, isLoading: model.isRunning("doctor")) {
+                    model.capture("doctor")
+                }
+            }
+
+            HStack(spacing: 8) {
+                CompactActionButton(title: "Folder", systemName: "folder", tone: .primary, subtle: true, isLoading: model.isRunning("open workspace")) {
+                    model.openWorkspace()
+                }
+                CompactActionButton(title: "Config", systemName: "doc.text", tone: .primary, subtle: true, isLoading: model.isRunning("open config")) {
+                    model.openConfig()
+                }
+                CompactActionButton(title: "Copy", systemName: "doc.on.doc", tone: .primary, subtle: true, isLoading: model.isRunning("copy status")) {
+                    model.copyStatus()
+                }
+                CompactActionButton(title: "Refresh", systemName: "arrow.clockwise.circle", tone: .primary, subtle: true, isLoading: model.isRunning("refresh")) {
+                    model.refresh()
+                }
+            }
         }
+    }
+}
+
+struct ProxyInlineStatus: View {
+    @ObservedObject var model: SreeportModel
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(model.proxyRunning ? Color.green : Color.orange)
+                .frame(width: 8, height: 8)
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Proxy")
+                    .font(.caption.weight(.semibold))
+                Text(model.proxyLabel)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .frame(width: 120, alignment: .leading)
+        .background((model.proxyRunning ? Color.green : Color.orange).opacity(0.10), in: RoundedRectangle(cornerRadius: 9))
     }
 }
 
@@ -365,7 +414,7 @@ struct ProjectRow: View {
                 MiniActionButton(title: "Start", systemName: "play.fill", tone: .green, isLoading: model.isRunning("start \(project.name)")) { model.run("start", project.name) }
                 MiniActionButton(title: "Restart", systemName: "arrow.clockwise", tone: .blue, isLoading: model.isRunning("restart \(project.name)")) { model.run("restart", project.name) }
                 MiniActionButton(title: "Stop", systemName: "stop.fill", tone: .red, isLoading: model.isRunning("stop \(project.name)")) { model.run("stop", project.name) }
-                MiniIconButton(systemName: "doc.text.magnifyingglass", help: "Show logs for \(project.name)", isLoading: model.isRunning("logs \(project.name)")) { model.capture("logs", project.name) }
+                MiniActionButton(title: "Logs", systemName: "doc.text.magnifyingglass", tone: .primary, isLoading: model.isRunning("logs \(project.name)")) { model.capture("logs", project.name) }
             }
         }
         .padding(12)
@@ -636,22 +685,30 @@ struct OutputPanel: View {
                 }
             }
 
-            if model.isBusy {
+            ZStack {
                 ProgressView()
                     .progressViewStyle(.linear)
                     .controlSize(.small)
-                    .frame(maxWidth: .infinity)
+                    .opacity(model.isBusy ? 1 : 0)
             }
+            .frame(height: 4)
 
             Text(model.visibleOutput)
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(model.error == nil ? Color.secondary : Color.red)
                 .lineLimit(4)
-                .frame(maxWidth: .infinity, minHeight: 48, alignment: .topLeading)
+                .frame(maxWidth: .infinity, minHeight: 52, maxHeight: 52, alignment: .topLeading)
                 .padding(10)
                 .textSelection(.enabled)
                 .background(Color(nsColor: .textBackgroundColor).opacity(0.7), in: RoundedRectangle(cornerRadius: 10))
         }
+        .frame(height: 104)
+        .padding(12)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(model.error == nil ? Color.accentColor.opacity(0.14) : Color.red.opacity(0.22), lineWidth: 1)
+        )
     }
 }
 
@@ -809,6 +866,16 @@ final class SreeportModel: ObservableObject {
         }
     }
 
+    func showProxyStatus() {
+        let command = "proxy status"
+        begin(command, message: "Checking proxy status")
+        executeSreeport(["proxy", "status"]) { result in
+            self.finish(command)
+            self.handle(result, command: command)
+            self.refreshProxyStatus(showActivity: false)
+        }
+    }
+
     func refreshProxy() {
         refreshProxyStatus(showActivity: false)
     }
@@ -953,6 +1020,9 @@ final class SreeportModel: ObservableObject {
     private func normalizedOutput(_ output: String, command: String) -> String {
         let trimmed = output.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty { return trimmed }
+        if command.hasPrefix("logs ") {
+            return "No log output yet for \(command.replacingOccurrences(of: "logs ", with: ""))."
+        }
         return "Completed: sreeport \(command)"
     }
 
