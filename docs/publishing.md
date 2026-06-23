@@ -34,9 +34,9 @@ Replace `123456` with a current npm two-factor code. If the `@sreeport` scope do
 
 ```bash
 gh repo create sreejithmuralidharan/sreeport --public --source=. --remote=origin --push
-git tag v0.1.0
-git push origin v0.1.0
-gh release create v0.1.0 --title "Sreeport v0.1.0" --notes-file CHANGELOG.md
+git tag v0.1.1
+git push origin v0.1.1
+gh release create v0.1.1 --title "Sreeport v0.1.1" --notes-file CHANGELOG.md
 ```
 
 ## macOS App

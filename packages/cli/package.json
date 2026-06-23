@@ -1,6 +1,6 @@
 {
   "name": "@sreeport/cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Command-line interface for Sreeport.",
   "type": "module",
   "author": "Sreejith Muralidharan <hello@sreejith.co.uk> (https://sreejith.co.uk)",
