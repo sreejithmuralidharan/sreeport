@@ -162,6 +162,27 @@ program
 const proxy = program.command("proxy").description("Manage the Caddy proxy");
 
 proxy
+  .command("status")
+  .description("Show Sreeport-managed Caddy status")
+  .option("--json", "Print JSON")
+  .action((options) => {
+    const runtime = runtimePaths();
+    const pidPath = projectPidPath("caddy", runtime);
+    const pid = readOptionalPid(pidPath);
+    const running = Boolean(pid && isAlive(pid));
+    const status = {
+      running,
+      pid: running ? pid : undefined,
+      caddyfile: runtime.caddyfile
+    };
+    if (options.json) {
+      console.log(JSON.stringify(status, null, 2));
+      return;
+    }
+    console.log(`caddy ${running ? `running pid=${pid}` : "stopped"} config=${runtime.caddyfile}`);
+  });
+
+proxy
   .command("write")
   .description("Write the Sreeport Caddyfile")
   .action(async () => {

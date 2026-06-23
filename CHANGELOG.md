@@ -6,6 +6,8 @@
 - Fixed the project list area so configured projects remain visible instead of collapsing beneath the toolbar.
 - Added an in-menu output panel for command results and project logs.
 - Improved the packaged macOS app workflow so local workspace state is loaded from Sreeport application support.
+- Replaced the passive proxy and gear controls with a stateful Restart Proxy control and an actionable workspace tools panel.
+- Added CLI proxy status output for menu-bar UI status and diagnostics.
 
 ## 0.1.0
 

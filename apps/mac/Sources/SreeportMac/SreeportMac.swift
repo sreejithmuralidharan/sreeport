@@ -26,6 +26,7 @@ struct SreeportMacApp: App {
 struct SreeportMenu: View {
     @ObservedObject var model: SreeportModel
     @State private var query = ""
+    @State private var showWorkspaceTools = false
 
     private var filteredProjects: [ProjectStatus] {
         if query.isEmpty { return model.projects }
@@ -52,7 +53,12 @@ struct SreeportMenu: View {
             .padding(.vertical, 9)
             .background(.quaternary, in: RoundedRectangle(cornerRadius: 10))
 
-            ActionBar(model: model)
+            ActionBar(model: model, showWorkspaceTools: $showWorkspaceTools)
+
+            if showWorkspaceTools {
+                WorkspaceToolsPanel(model: model)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
 
             HStack {
                 Text("Projects")
@@ -142,22 +148,120 @@ struct MetricTile: View {
 
 struct ActionBar: View {
     @ObservedObject var model: SreeportModel
+    @Binding var showWorkspaceTools: Bool
 
     var body: some View {
-        HStack(spacing: 8) {
-            PrimaryActionButton(title: "Start All", systemName: "play.fill") {
-                model.run("start", "all")
+        VStack(spacing: 10) {
+            HStack(spacing: 8) {
+                PrimaryActionButton(title: "Start All", systemName: "play.fill", tone: .green) {
+                    model.run("start", "all")
+                }
+                PrimaryActionButton(title: "Stop All", systemName: "stop.fill", tone: .red) {
+                    model.run("stop", "all")
+                }
             }
-            PrimaryActionButton(title: "Stop All", systemName: "stop.fill") {
-                model.run("stop", "all")
-            }
-            PrimaryActionButton(title: "Proxy", systemName: "point.3.connected.trianglepath.dotted") {
-                model.run("proxy", "restart")
-            }
-            IconButton(systemName: "gearshape", help: "Open Settings") {
-                NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+
+            HStack(spacing: 8) {
+                Button {
+                    model.run("proxy", "restart")
+                    model.refreshProxy()
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "point.3.connected.trianglepath.dotted")
+                            .font(.system(size: 14, weight: .semibold))
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Restart Proxy")
+                                .font(.caption.weight(.semibold))
+                            Text(model.proxyLabel)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Circle()
+                            .fill(model.proxyRunning ? Color.green : Color.orange)
+                            .frame(width: 8, height: 8)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 9)
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.plain)
+                .background(.quaternary, in: RoundedRectangle(cornerRadius: 11))
+                .help("Regenerate and restart the Caddy proxy")
+
+                Button {
+                    withAnimation(.easeInOut(duration: 0.16)) {
+                        showWorkspaceTools.toggle()
+                    }
+                } label: {
+                    VStack(spacing: 3) {
+                        Image(systemName: showWorkspaceTools ? "xmark" : "slider.horizontal.3")
+                            .font(.system(size: 15, weight: .semibold))
+                        Text(showWorkspaceTools ? "Close" : "Tools")
+                            .font(.caption2.weight(.medium))
+                    }
+                    .frame(width: 70, height: 48)
+                }
+                .buttonStyle(.plain)
+                .background(showWorkspaceTools ? Color.accentColor.opacity(0.15) : Color(nsColor: .quaternaryLabelColor).opacity(0.12), in: RoundedRectangle(cornerRadius: 11))
+                .help("Show workspace tools")
             }
         }
+    }
+}
+
+struct WorkspaceToolsPanel: View {
+    @ObservedObject var model: SreeportModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Label("Workspace Tools", systemImage: "folder.badge.gearshape")
+                    .font(.caption.weight(.semibold))
+                Spacer()
+                Text(model.workspaceLabel)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+
+            HStack(spacing: 8) {
+                UtilityButton(title: "Open Folder", systemName: "folder") {
+                    model.openWorkspace()
+                }
+                UtilityButton(title: "Config", systemName: "doc.text") {
+                    model.openConfig()
+                }
+                UtilityButton(title: "Doctor", systemName: "stethoscope") {
+                    model.capture("doctor")
+                    model.refreshProxy()
+                }
+                UtilityButton(title: "Copy Status", systemName: "doc.on.doc") {
+                    model.copyStatus()
+                }
+            }
+
+            HStack(spacing: 8) {
+                UtilityButton(title: "Write Proxy", systemName: "square.and.arrow.down") {
+                    model.capture("proxy", "write")
+                    model.refreshProxy()
+                }
+                UtilityButton(title: "Proxy Status", systemName: "wave.3.right") {
+                    model.capture("proxy", "status")
+                    model.refreshProxy()
+                }
+                UtilityButton(title: "Quit", systemName: "power") {
+                    NSApp.terminate(nil)
+                }
+            }
+        }
+        .padding(12)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.accentColor.opacity(0.16), lineWidth: 1)
+        )
     }
 }
 
@@ -224,17 +328,49 @@ struct StatusGlyph: View {
 struct PrimaryActionButton: View {
     let title: String
     let systemName: String
+    let tone: Color
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Label(title, systemImage: systemName)
-                .font(.caption.weight(.semibold))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 7)
+            HStack(spacing: 9) {
+                Image(systemName: systemName)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(tone)
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                Spacer()
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.plain)
+        .background(tone.opacity(0.11), in: RoundedRectangle(cornerRadius: 11))
+    }
+}
+
+struct UtilityButton: View {
+    let title: String
+    let systemName: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 5) {
+                Image(systemName: systemName)
+                    .font(.system(size: 13, weight: .semibold))
+                Text(title)
+                    .font(.caption2.weight(.medium))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
         }
         .buttonStyle(.plain)
         .background(.quaternary, in: RoundedRectangle(cornerRadius: 9))
+        .help(title)
     }
 }
 
@@ -367,6 +503,8 @@ final class SreeportModel: ObservableObject {
     @Published var error: String?
     @Published var commandOutput: String?
     @Published var outputTitle = "Output"
+    @Published var proxyRunning = false
+    @Published var proxyPid: Int?
 
     var summary: String {
         if projects.isEmpty { return "No project config loaded" }
@@ -387,6 +525,10 @@ final class SreeportModel: ObservableObject {
         return (workspace as NSString).abbreviatingWithTildeInPath
     }
 
+    var proxyLabel: String {
+        proxyRunning ? "Live\(proxyPid.map { " pid=\($0)" } ?? "")" : "Not running"
+    }
+
     var visibleOutput: String {
         if let error, !error.isEmpty { return error }
         if let commandOutput, !commandOutput.isEmpty { return commandOutput }
@@ -405,6 +547,7 @@ final class SreeportModel: ObservableObject {
             let decoded = try JSONDecoder().decode(StatusResponse.self, from: data)
             projects = decoded.projects
             error = nil
+            refreshProxy()
         } catch {
             self.error = error.localizedDescription
         }
@@ -435,10 +578,68 @@ final class SreeportModel: ObservableObject {
         outputTitle = args.joined(separator: " ")
     }
 
+    func refreshProxy() {
+        let result = runSreeport(["proxy", "status", "--json"])
+        guard result.exitCode == 0,
+              let data = result.output.data(using: .utf8),
+              let decoded = try? JSONDecoder().decode(ProxyStatus.self, from: data) else {
+            proxyRunning = false
+            proxyPid = nil
+            return
+        }
+        proxyRunning = decoded.running
+        proxyPid = decoded.pid
+    }
+
     func clearOutput() {
         error = nil
         commandOutput = nil
         outputTitle = "Output"
+    }
+
+    func openWorkspace() {
+        guard let workspace = resolveWorkspace() else {
+            error = "Workspace path is not configured."
+            return
+        }
+        openPath(workspace)
+    }
+
+    func openConfig() {
+        guard let workspace = resolveWorkspace() else {
+            error = "Workspace path is not configured."
+            return
+        }
+        openPath("\(workspace)/sreeport.config.ts")
+    }
+
+    func copyStatus() {
+        let result = runSreeport(["status"])
+        if result.exitCode == 0 {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(result.output, forType: .string)
+            commandOutput = "Copied current status to clipboard."
+            error = nil
+        } else {
+            error = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
+            commandOutput = nil
+        }
+        outputTitle = "copy status"
+    }
+
+    private func openPath(_ path: String) {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+        process.arguments = [path]
+        do {
+            try process.run()
+            commandOutput = "Opened \(path)"
+            error = nil
+        } catch {
+            self.error = error.localizedDescription
+            commandOutput = nil
+        }
+        outputTitle = "open"
     }
 
     private func runSreeport(_ args: [String]) -> CommandResult {
@@ -502,6 +703,11 @@ struct CommandResult {
 
 struct StatusResponse: Decodable {
     let projects: [ProjectStatus]
+}
+
+struct ProxyStatus: Decodable {
+    let running: Bool
+    let pid: Int?
 }
 
 struct ProjectStatus: Decodable, Identifiable {
