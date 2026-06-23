@@ -221,7 +221,7 @@ next
     console.log("Add withSreeportNextConfig from @sreeport/next to next.config when you want allowedDevOrigins synced.");
   });
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(fs.realpathSync(process.argv[1])).href) {
   program.parseAsync(process.argv).catch((error) => {
     exitWithError(error instanceof Error ? error.message : String(error));
   });
