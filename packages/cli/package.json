@@ -1,0 +1,33 @@
+{
+  "name": "@sreeport/cli",
+  "version": "0.1.0",
+  "description": "Command-line interface for Sreeport.",
+  "type": "module",
+  "author": "Sreejith Muralidharan <hello@sreejith.co.uk> (https://sreejith.co.uk)",
+  "license": "MIT",
+  "bin": {
+    "sreeport": "./dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sreejithmuralidharan/sreeport.git",
+    "directory": "packages/cli"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/fix-bin.mjs",
+    "clean": "rm -rf dist",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@sreeport/core": "workspace:*",
+    "commander": "^14.0.2"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0"
+  }
+}

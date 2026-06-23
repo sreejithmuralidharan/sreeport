@@ -1,0 +1,11 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Sreeport harbor-route mark</title>
+  <desc id="desc">A custom harbor route mark combining a port dock, a guided route, and an active status light.</desc>
+  <rect width="512" height="512" rx="112" fill="#071316"/>
+  <path d="M112 335H400" stroke="#D7FF72" stroke-width="36" stroke-linecap="round"/>
+  <path d="M145 335V390H367V335" stroke="#D7FF72" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M134 174C205 89 292 422 382 235" stroke="#5EEAD4" stroke-width="34" stroke-linecap="round"/>
+  <circle cx="379" cy="232" r="42" fill="#F8FAFC"/>
+  <circle cx="379" cy="232" r="19" fill="#071316"/>
+  <path d="M151 174H104M151 174L119 140M151 174L119 208" stroke="#F8FAFC" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

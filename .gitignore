@@ -1,0 +1,17 @@
+node_modules
+dist
+.DS_Store
+.env
+.env.*
+!.env.example
+.turbo
+coverage
+*.log
+*.tgz
+.tsbuildinfo
+*.tsbuildinfo
+logs
+.sreeport-state
+apps/mac/.build
+apps/mac/.swiftpm
+DerivedData

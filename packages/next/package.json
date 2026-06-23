@@ -1,0 +1,39 @@
+{
+  "name": "@sreeport/next",
+  "version": "0.1.0",
+  "description": "Next.js integration helpers for Sreeport.",
+  "type": "module",
+  "author": "Sreejith Muralidharan <hello@sreejith.co.uk> (https://sreejith.co.uk)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sreejithmuralidharan/sreeport.git",
+    "directory": "packages/next"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@sreeport/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "next": ">=14"
+  },
+  "peerDependenciesMeta": {
+    "next": {
+      "optional": true
+    }
+  }
+}

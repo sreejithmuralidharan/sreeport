@@ -1,0 +1,11 @@
+{
+  "name": "@sreeport/mac",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Native macOS menu-bar app for Sreeport.",
+  "scripts": {
+    "build": "swift build",
+    "clean": "swift package clean",
+    "test": "swift test"
+  }
+}

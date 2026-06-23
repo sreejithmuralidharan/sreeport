@@ -1,0 +1,33 @@
+{
+  "name": "@sreeport/core",
+  "version": "0.1.0",
+  "description": "Core engine for Sreeport local development orchestration.",
+  "type": "module",
+  "author": "Sreejith Muralidharan <hello@sreejith.co.uk> (https://sreejith.co.uk)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sreejithmuralidharan/sreeport.git",
+    "directory": "packages/core"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "env-paths": "^3.0.0",
+    "jiti": "^2.6.1",
+    "zod": "^4.2.1"
+  }
+}
