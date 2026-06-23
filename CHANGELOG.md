@@ -8,6 +8,8 @@
 - Improved the packaged macOS app workflow so local workspace state is loaded from Sreeport application support.
 - Replaced the passive proxy and gear controls with a stateful Restart Proxy control and an actionable workspace tools panel.
 - Added CLI proxy status output for menu-bar UI status and diagnostics.
+- Reworked the macOS menu controls into a visible proxy status card, always-available quick tools, project filters, and explicit command completion output.
+- Expanded the settings window with actionable workspace, proxy, diagnostics, and status controls.
 
 ## 0.1.0
 

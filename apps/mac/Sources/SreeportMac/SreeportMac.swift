@@ -26,11 +26,13 @@ struct SreeportMacApp: App {
 struct SreeportMenu: View {
     @ObservedObject var model: SreeportModel
     @State private var query = ""
-    @State private var showWorkspaceTools = false
+    @State private var projectFilter: ProjectFilter = .all
 
     private var filteredProjects: [ProjectStatus] {
-        if query.isEmpty { return model.projects }
-        return model.projects.filter { $0.name.localizedCaseInsensitiveContains(query) || $0.domain.localizedCaseInsensitiveContains(query) }
+        let searched = query.isEmpty
+            ? model.projects
+            : model.projects.filter { $0.name.localizedCaseInsensitiveContains(query) || $0.domain.localizedCaseInsensitiveContains(query) }
+        return searched.filter(projectFilter.matches)
     }
 
     var body: some View {
@@ -53,12 +55,7 @@ struct SreeportMenu: View {
             .padding(.vertical, 9)
             .background(.quaternary, in: RoundedRectangle(cornerRadius: 10))
 
-            ActionBar(model: model, showWorkspaceTools: $showWorkspaceTools)
-
-            if showWorkspaceTools {
-                WorkspaceToolsPanel(model: model)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
+            ActionBar(model: model)
 
             HStack {
                 Text("Projects")
@@ -68,6 +65,8 @@ struct SreeportMenu: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+
+            ProjectFilterTabs(selection: $projectFilter, projects: model.projects)
 
             ScrollView {
                 LazyVStack(spacing: 10) {
@@ -146,12 +145,76 @@ struct MetricTile: View {
     }
 }
 
-struct ActionBar: View {
-    @ObservedObject var model: SreeportModel
-    @Binding var showWorkspaceTools: Bool
+enum ProjectFilter: String, CaseIterable, Identifiable {
+    case all
+    case live
+    case stopped
+    case issues
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .all: return "All"
+        case .live: return "Live"
+        case .stopped: return "Stopped"
+        case .issues: return "Issues"
+        }
+    }
+
+    func count(in projects: [ProjectStatus]) -> Int {
+        projects.filter(matches).count
+    }
+
+    func matches(_ project: ProjectStatus) -> Bool {
+        switch self {
+        case .all:
+            return true
+        case .live:
+            return project.listening
+        case .stopped:
+            return !project.running && !project.listening
+        case .issues:
+            return project.running && !project.listening
+        }
+    }
+}
+
+struct ProjectFilterTabs: View {
+    @Binding var selection: ProjectFilter
+    let projects: [ProjectStatus]
 
     var body: some View {
-        VStack(spacing: 10) {
+        HStack(spacing: 6) {
+            ForEach(ProjectFilter.allCases) { filter in
+                Button {
+                    selection = filter
+                } label: {
+                    HStack(spacing: 5) {
+                        Text(filter.title)
+                        Text("\(filter.count(in: projects))")
+                            .font(.caption2.monospacedDigit().weight(.semibold))
+                            .foregroundStyle(selection == filter ? Color.white.opacity(0.85) : Color.secondary)
+                    }
+                    .font(.caption.weight(.semibold))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(selection == filter ? Color.white : Color.primary)
+                .background(selection == filter ? Color.accentColor : Color(nsColor: .quaternaryLabelColor).opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+                .help("Show \(filter.title.lowercased()) projects")
+            }
+        }
+    }
+}
+
+struct ActionBar: View {
+    @ObservedObject var model: SreeportModel
+
+    var body: some View {
+        VStack(spacing: 12) {
             HStack(spacing: 8) {
                 PrimaryActionButton(title: "Start All", systemName: "play.fill", tone: .green) {
                     model.run("start", "all")
@@ -159,54 +222,65 @@ struct ActionBar: View {
                 PrimaryActionButton(title: "Stop All", systemName: "stop.fill", tone: .red) {
                     model.run("stop", "all")
                 }
+                PrimaryActionButton(title: "Restart All", systemName: "arrow.clockwise", tone: .blue) {
+                    model.run("restart", "all")
+                }
+            }
+
+            ProxyControlCard(model: model)
+            WorkspaceToolsPanel(model: model)
+        }
+    }
+}
+
+struct ProxyControlCard: View {
+    @ObservedObject var model: SreeportModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(model.proxyRunning ? Color.green.opacity(0.14) : Color.orange.opacity(0.14))
+                    Image(systemName: "point.3.connected.trianglepath.dotted")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(model.proxyRunning ? Color.green : Color.orange)
+                }
+                .frame(width: 36, height: 36)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Local Proxy")
+                        .font(.caption.weight(.semibold))
+                    Text(model.proxyRunning ? "Caddy is routing .localhost domains" : "Proxy is stopped")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                StatusPill(text: model.proxyLabel, color: model.proxyRunning ? .green : .orange)
             }
 
             HStack(spacing: 8) {
-                Button {
+                CompactActionButton(title: "Restart", systemName: "arrow.clockwise", tone: .blue) {
                     model.run("proxy", "restart")
+                }
+                CompactActionButton(title: "Status", systemName: "wave.3.right", tone: .primary, subtle: true) {
+                    model.capture("proxy", "status")
                     model.refreshProxy()
-                } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "point.3.connected.trianglepath.dotted")
-                            .font(.system(size: 14, weight: .semibold))
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Restart Proxy")
-                                .font(.caption.weight(.semibold))
-                            Text(model.proxyLabel)
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Circle()
-                            .fill(model.proxyRunning ? Color.green : Color.orange)
-                            .frame(width: 8, height: 8)
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 9)
-                    .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.plain)
-                .background(.quaternary, in: RoundedRectangle(cornerRadius: 11))
-                .help("Regenerate and restart the Caddy proxy")
-
-                Button {
-                    withAnimation(.easeInOut(duration: 0.16)) {
-                        showWorkspaceTools.toggle()
-                    }
-                } label: {
-                    VStack(spacing: 3) {
-                        Image(systemName: showWorkspaceTools ? "xmark" : "slider.horizontal.3")
-                            .font(.system(size: 15, weight: .semibold))
-                        Text(showWorkspaceTools ? "Close" : "Tools")
-                            .font(.caption2.weight(.medium))
-                    }
-                    .frame(width: 70, height: 48)
+                CompactActionButton(title: "Write Config", systemName: "doc.badge.gearshape", tone: .primary, subtle: true) {
+                    model.capture("proxy", "write")
+                    model.refreshProxy()
                 }
-                .buttonStyle(.plain)
-                .background(showWorkspaceTools ? Color.accentColor.opacity(0.15) : Color(nsColor: .quaternaryLabelColor).opacity(0.12), in: RoundedRectangle(cornerRadius: 11))
-                .help("Show workspace tools")
             }
         }
+        .padding(12)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke((model.proxyRunning ? Color.green : Color.orange).opacity(0.16), lineWidth: 1)
+        )
     }
 }
 
@@ -216,7 +290,7 @@ struct WorkspaceToolsPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Label("Workspace Tools", systemImage: "folder.badge.gearshape")
+                Label("Quick Tools", systemImage: "slider.horizontal.3")
                     .font(.caption.weight(.semibold))
                 Spacer()
                 Text(model.workspaceLabel)
@@ -237,19 +311,15 @@ struct WorkspaceToolsPanel: View {
                     model.capture("doctor")
                     model.refreshProxy()
                 }
-                UtilityButton(title: "Copy Status", systemName: "doc.on.doc") {
-                    model.copyStatus()
-                }
             }
 
             HStack(spacing: 8) {
-                UtilityButton(title: "Write Proxy", systemName: "square.and.arrow.down") {
-                    model.capture("proxy", "write")
-                    model.refreshProxy()
+                UtilityButton(title: "Copy Status", systemName: "doc.on.doc") {
+                    model.copyStatus()
                 }
-                UtilityButton(title: "Proxy Status", systemName: "wave.3.right") {
-                    model.capture("proxy", "status")
-                    model.refreshProxy()
+                UtilityButton(title: "Refresh", systemName: "arrow.clockwise") {
+                    model.refresh()
+                    model.capture("status")
                 }
                 UtilityButton(title: "Quit", systemName: "power") {
                     NSApp.terminate(nil)
@@ -284,9 +354,7 @@ struct ProjectRow: View {
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 3) {
-                    Text(project.stateLabel)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(project.stateColor)
+                    StatusPill(text: project.stateLabel, color: project.stateColor)
                     Text(":\(project.port)")
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(.secondary)
@@ -294,10 +362,10 @@ struct ProjectRow: View {
             }
 
             HStack(spacing: 7) {
-                MiniActionButton(title: "Open", systemName: "safari") { model.run("open", project.name) }
-                MiniIconButton(systemName: "play.fill", help: "Start \(project.name)") { model.run("start", project.name) }
-                MiniIconButton(systemName: "arrow.clockwise", help: "Restart \(project.name)") { model.run("restart", project.name) }
-                MiniIconButton(systemName: "stop.fill", help: "Stop \(project.name)") { model.run("stop", project.name) }
+                MiniActionButton(title: "Open", systemName: "safari", tone: .blue) { model.run("open", project.name) }
+                MiniActionButton(title: "Start", systemName: "play.fill", tone: .green) { model.run("start", project.name) }
+                MiniActionButton(title: "Restart", systemName: "arrow.clockwise", tone: .blue) { model.run("restart", project.name) }
+                MiniActionButton(title: "Stop", systemName: "stop.fill", tone: .red) { model.run("stop", project.name) }
                 MiniIconButton(systemName: "doc.text.magnifyingglass", help: "Show logs for \(project.name)") { model.capture("logs", project.name) }
             }
         }
@@ -325,6 +393,26 @@ struct StatusGlyph: View {
     }
 }
 
+struct StatusPill: View {
+    let text: String
+    let color: Color
+
+    var body: some View {
+        HStack(spacing: 5) {
+            Circle()
+                .fill(color)
+                .frame(width: 6, height: 6)
+            Text(text)
+                .font(.caption2.weight(.semibold))
+                .lineLimit(1)
+        }
+        .foregroundStyle(color)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(color.opacity(0.12), in: Capsule())
+    }
+}
+
 struct PrimaryActionButton: View {
     let title: String
     let systemName: String
@@ -347,6 +435,34 @@ struct PrimaryActionButton: View {
         }
         .buttonStyle(.plain)
         .background(tone.opacity(0.11), in: RoundedRectangle(cornerRadius: 11))
+        .overlay(
+            RoundedRectangle(cornerRadius: 11)
+                .stroke(tone.opacity(0.16), lineWidth: 1)
+        )
+        .help(title)
+    }
+}
+
+struct CompactActionButton: View {
+    let title: String
+    let systemName: String
+    let tone: Color
+    var subtle = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label(title, systemImage: systemName)
+                .font(.caption.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 7)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(tone)
+        .background(tone.opacity(subtle ? 0.08 : 0.11), in: RoundedRectangle(cornerRadius: 9))
+        .help(title)
     }
 }
 
@@ -377,17 +493,22 @@ struct UtilityButton: View {
 struct MiniActionButton: View {
     let title: String
     let systemName: String
+    let tone: Color
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             Label(title, systemImage: systemName)
                 .font(.caption.weight(.medium))
-                .padding(.horizontal, 9)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .padding(.horizontal, 8)
                 .padding(.vertical, 5)
+                .frame(maxWidth: .infinity)
         }
         .buttonStyle(.plain)
-        .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 7))
+        .foregroundStyle(tone)
+        .background(tone.opacity(0.11), in: RoundedRectangle(cornerRadius: 7))
         .help(title)
     }
 }
@@ -482,19 +603,84 @@ struct SettingsView: View {
     @ObservedObject var model: SreeportModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Sreeport Settings")
-                .font(.title2.bold())
-            Text("Project mappings are managed with sreeport.config.ts in each workspace. The settings window will grow into a full editor for mappings, shortcuts, proxy configuration, and browser defaults.")
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            Button("Run Doctor") {
-                model.run("doctor")
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(spacing: 12) {
+                Image(nsImage: SreeportIcon.menuBarImage())
+                    .resizable()
+                    .frame(width: 26, height: 26)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Sreeport Settings")
+                        .font(.title2.bold())
+                    Text("Workspace, proxy, and diagnostics")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
+
+            VStack(alignment: .leading, spacing: 10) {
+                SettingsInfoRow(label: "Workspace", value: model.workspaceLabel, systemName: "folder")
+                SettingsInfoRow(label: "Proxy", value: model.proxyLabel, systemName: "point.3.connected.trianglepath.dotted")
+                SettingsInfoRow(label: "Projects", value: "\(model.runningCount) of \(model.projects.count) running", systemName: "list.bullet.rectangle")
+            }
+            .padding(14)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+
+            HStack(spacing: 10) {
+                CompactActionButton(title: "Open Folder", systemName: "folder", tone: .blue) {
+                    model.openWorkspace()
+                }
+                CompactActionButton(title: "Open Config", systemName: "doc.text", tone: .blue) {
+                    model.openConfig()
+                }
+                CompactActionButton(title: "Run Doctor", systemName: "stethoscope", tone: .orange) {
+                    model.capture("doctor")
+                }
+            }
+
+            HStack(spacing: 10) {
+                CompactActionButton(title: "Restart Proxy", systemName: "arrow.clockwise", tone: .green) {
+                    model.run("proxy", "restart")
+                }
+                CompactActionButton(title: "Copy Status", systemName: "doc.on.doc", tone: .primary, subtle: true) {
+                    model.copyStatus()
+                }
+                CompactActionButton(title: "Refresh", systemName: "arrow.clockwise.circle", tone: .primary, subtle: true) {
+                    model.refresh()
+                }
+            }
+
+            OutputPanel(model: model)
             Spacer()
         }
         .padding(24)
-        .frame(width: 520, height: 300)
+        .frame(width: 560, height: 430)
+        .onAppear {
+            model.refresh()
+        }
+    }
+}
+
+struct SettingsInfoRow: View {
+    let label: String
+    let value: String
+    let systemName: String
+
+    var body: some View {
+        HStack(spacing: 9) {
+            Image(systemName: systemName)
+                .font(.system(size: 13, weight: .semibold))
+                .frame(width: 18)
+                .foregroundStyle(.secondary)
+            Text(label)
+                .font(.caption.weight(.semibold))
+                .frame(width: 76, alignment: .leading)
+            Text(value)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+            Spacer()
+        }
     }
 }
 
@@ -555,27 +741,29 @@ final class SreeportModel: ObservableObject {
 
     func run(_ args: String...) {
         let result = runSreeport(args)
+        let command = args.joined(separator: " ")
         if result.exitCode != 0 {
             error = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
             commandOutput = nil
         } else {
             error = nil
-            commandOutput = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
+            commandOutput = normalizedOutput(result.output, command: command)
         }
-        outputTitle = args.joined(separator: " ")
+        outputTitle = command
         refresh()
     }
 
     func capture(_ args: String...) {
         let result = runSreeport(args)
+        let command = args.joined(separator: " ")
         if result.exitCode != 0 {
             error = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
             commandOutput = nil
         } else {
             error = nil
-            commandOutput = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
+            commandOutput = normalizedOutput(result.output, command: command)
         }
-        outputTitle = args.joined(separator: " ")
+        outputTitle = command
     }
 
     func refreshProxy() {
@@ -640,6 +828,12 @@ final class SreeportModel: ObservableObject {
             commandOutput = nil
         }
         outputTitle = "open"
+    }
+
+    private func normalizedOutput(_ output: String, command: String) -> String {
+        let trimmed = output.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty { return trimmed }
+        return "Completed: sreeport \(command)"
     }
 
     private func runSreeport(_ args: [String]) -> CommandResult {
