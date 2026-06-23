@@ -10,6 +10,7 @@
 - Added CLI proxy status output for menu-bar UI status and diagnostics.
 - Reworked the macOS menu controls into a visible proxy status card, always-available quick tools, project filters, and explicit command completion output.
 - Expanded the settings window with actionable workspace, proxy, diagnostics, and status controls.
+- Made macOS menu actions non-blocking with per-button loading indicators, an in-menu progress bar, and immediate command feedback while CLI tasks run.
 
 ## 0.1.0
 

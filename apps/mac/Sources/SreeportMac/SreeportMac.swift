@@ -114,7 +114,7 @@ struct HeaderView: View {
                     .truncationMode(.middle)
             }
             Spacer()
-            IconButton(systemName: "arrow.clockwise", help: "Refresh") {
+            IconButton(systemName: "arrow.clockwise", help: "Refresh", isLoading: model.isRunning("refresh")) {
                 model.refresh()
             }
         }
@@ -216,13 +216,13 @@ struct ActionBar: View {
     var body: some View {
         VStack(spacing: 12) {
             HStack(spacing: 8) {
-                PrimaryActionButton(title: "Start All", systemName: "play.fill", tone: .green) {
+                PrimaryActionButton(title: "Start All", systemName: "play.fill", tone: .green, isLoading: model.isRunning("start all")) {
                     model.run("start", "all")
                 }
-                PrimaryActionButton(title: "Stop All", systemName: "stop.fill", tone: .red) {
+                PrimaryActionButton(title: "Stop All", systemName: "stop.fill", tone: .red, isLoading: model.isRunning("stop all")) {
                     model.run("stop", "all")
                 }
-                PrimaryActionButton(title: "Restart All", systemName: "arrow.clockwise", tone: .blue) {
+                PrimaryActionButton(title: "Restart All", systemName: "arrow.clockwise", tone: .blue, isLoading: model.isRunning("restart all")) {
                     model.run("restart", "all")
                 }
             }
@@ -262,14 +262,14 @@ struct ProxyControlCard: View {
             }
 
             HStack(spacing: 8) {
-                CompactActionButton(title: "Restart", systemName: "arrow.clockwise", tone: .blue) {
+                CompactActionButton(title: "Restart", systemName: "arrow.clockwise", tone: .blue, isLoading: model.isRunning("proxy restart")) {
                     model.run("proxy", "restart")
                 }
-                CompactActionButton(title: "Status", systemName: "wave.3.right", tone: .primary, subtle: true) {
+                CompactActionButton(title: "Status", systemName: "wave.3.right", tone: .primary, subtle: true, isLoading: model.isRunning("proxy status")) {
                     model.capture("proxy", "status")
                     model.refreshProxy()
                 }
-                CompactActionButton(title: "Write Config", systemName: "doc.badge.gearshape", tone: .primary, subtle: true) {
+                CompactActionButton(title: "Write Config", systemName: "doc.badge.gearshape", tone: .primary, subtle: true, isLoading: model.isRunning("proxy write")) {
                     model.capture("proxy", "write")
                     model.refreshProxy()
                 }
@@ -301,25 +301,24 @@ struct WorkspaceToolsPanel: View {
             }
 
             HStack(spacing: 8) {
-                UtilityButton(title: "Open Folder", systemName: "folder") {
+                UtilityButton(title: "Open Folder", systemName: "folder", isLoading: model.isRunning("open workspace")) {
                     model.openWorkspace()
                 }
-                UtilityButton(title: "Config", systemName: "doc.text") {
+                UtilityButton(title: "Config", systemName: "doc.text", isLoading: model.isRunning("open config")) {
                     model.openConfig()
                 }
-                UtilityButton(title: "Doctor", systemName: "stethoscope") {
+                UtilityButton(title: "Doctor", systemName: "stethoscope", isLoading: model.isRunning("doctor")) {
                     model.capture("doctor")
                     model.refreshProxy()
                 }
             }
 
             HStack(spacing: 8) {
-                UtilityButton(title: "Copy Status", systemName: "doc.on.doc") {
+                UtilityButton(title: "Copy Status", systemName: "doc.on.doc", isLoading: model.isRunning("copy status")) {
                     model.copyStatus()
                 }
-                UtilityButton(title: "Refresh", systemName: "arrow.clockwise") {
+                UtilityButton(title: "Refresh", systemName: "arrow.clockwise", isLoading: model.isRunning("refresh")) {
                     model.refresh()
-                    model.capture("status")
                 }
                 UtilityButton(title: "Quit", systemName: "power") {
                     NSApp.terminate(nil)
@@ -362,11 +361,11 @@ struct ProjectRow: View {
             }
 
             HStack(spacing: 7) {
-                MiniActionButton(title: "Open", systemName: "safari", tone: .blue) { model.run("open", project.name) }
-                MiniActionButton(title: "Start", systemName: "play.fill", tone: .green) { model.run("start", project.name) }
-                MiniActionButton(title: "Restart", systemName: "arrow.clockwise", tone: .blue) { model.run("restart", project.name) }
-                MiniActionButton(title: "Stop", systemName: "stop.fill", tone: .red) { model.run("stop", project.name) }
-                MiniIconButton(systemName: "doc.text.magnifyingglass", help: "Show logs for \(project.name)") { model.capture("logs", project.name) }
+                MiniActionButton(title: "Open", systemName: "safari", tone: .blue, isLoading: model.isRunning("open \(project.name)")) { model.run("open", project.name) }
+                MiniActionButton(title: "Start", systemName: "play.fill", tone: .green, isLoading: model.isRunning("start \(project.name)")) { model.run("start", project.name) }
+                MiniActionButton(title: "Restart", systemName: "arrow.clockwise", tone: .blue, isLoading: model.isRunning("restart \(project.name)")) { model.run("restart", project.name) }
+                MiniActionButton(title: "Stop", systemName: "stop.fill", tone: .red, isLoading: model.isRunning("stop \(project.name)")) { model.run("stop", project.name) }
+                MiniIconButton(systemName: "doc.text.magnifyingglass", help: "Show logs for \(project.name)", isLoading: model.isRunning("logs \(project.name)")) { model.capture("logs", project.name) }
             }
         }
         .padding(12)
@@ -417,13 +416,13 @@ struct PrimaryActionButton: View {
     let title: String
     let systemName: String
     let tone: Color
+    var isLoading = false
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 9) {
-                Image(systemName: systemName)
-                    .font(.system(size: 13, weight: .semibold))
+                LoadingIcon(systemName: systemName, isLoading: isLoading)
                     .foregroundStyle(tone)
                 Text(title)
                     .font(.caption.weight(.semibold))
@@ -434,6 +433,8 @@ struct PrimaryActionButton: View {
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(.plain)
+        .disabled(isLoading)
+        .opacity(isLoading ? 0.78 : 1)
         .background(tone.opacity(0.11), in: RoundedRectangle(cornerRadius: 11))
         .overlay(
             RoundedRectangle(cornerRadius: 11)
@@ -448,18 +449,24 @@ struct CompactActionButton: View {
     let systemName: String
     let tone: Color
     var subtle = false
+    var isLoading = false
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Label(title, systemImage: systemName)
-                .font(.caption.weight(.semibold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 7)
+            HStack(spacing: 6) {
+                LoadingIcon(systemName: systemName, isLoading: isLoading, size: 12)
+                Text(title)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .font(.caption.weight(.semibold))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 7)
         }
         .buttonStyle(.plain)
+        .disabled(isLoading)
+        .opacity(isLoading ? 0.78 : 1)
         .foregroundStyle(tone)
         .background(tone.opacity(subtle ? 0.08 : 0.11), in: RoundedRectangle(cornerRadius: 9))
         .help(title)
@@ -469,13 +476,13 @@ struct CompactActionButton: View {
 struct UtilityButton: View {
     let title: String
     let systemName: String
+    var isLoading = false
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             VStack(spacing: 5) {
-                Image(systemName: systemName)
-                    .font(.system(size: 13, weight: .semibold))
+                LoadingIcon(systemName: systemName, isLoading: isLoading)
                 Text(title)
                     .font(.caption2.weight(.medium))
                     .lineLimit(1)
@@ -485,6 +492,8 @@ struct UtilityButton: View {
             .padding(.vertical, 8)
         }
         .buttonStyle(.plain)
+        .disabled(isLoading)
+        .opacity(isLoading ? 0.78 : 1)
         .background(.quaternary, in: RoundedRectangle(cornerRadius: 9))
         .help(title)
     }
@@ -494,19 +503,25 @@ struct MiniActionButton: View {
     let title: String
     let systemName: String
     let tone: Color
+    var isLoading = false
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Label(title, systemImage: systemName)
-                .font(.caption.weight(.medium))
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .frame(maxWidth: .infinity)
+            HStack(spacing: 5) {
+                LoadingIcon(systemName: systemName, isLoading: isLoading, size: 11)
+                Text(title)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .font(.caption.weight(.medium))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .frame(maxWidth: .infinity)
         }
         .buttonStyle(.plain)
+        .disabled(isLoading)
+        .opacity(isLoading ? 0.78 : 1)
         .foregroundStyle(tone)
         .background(tone.opacity(0.11), in: RoundedRectangle(cornerRadius: 7))
         .help(title)
@@ -516,15 +531,17 @@ struct MiniActionButton: View {
 struct IconButton: View {
     let systemName: String
     let help: String
+    var isLoading = false
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: systemName)
-                .font(.system(size: 15, weight: .semibold))
+            LoadingIcon(systemName: systemName, isLoading: isLoading, size: 15)
                 .frame(width: 32, height: 32)
         }
         .buttonStyle(.plain)
+        .disabled(isLoading)
+        .opacity(isLoading ? 0.78 : 1)
         .background(.quaternary, in: RoundedRectangle(cornerRadius: 9))
         .help(help)
     }
@@ -533,17 +550,39 @@ struct IconButton: View {
 struct MiniIconButton: View {
     let systemName: String
     let help: String
+    var isLoading = false
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: systemName)
-                .font(.system(size: 12, weight: .semibold))
+            LoadingIcon(systemName: systemName, isLoading: isLoading, size: 12)
                 .frame(width: 26, height: 24)
         }
         .buttonStyle(.plain)
+        .disabled(isLoading)
+        .opacity(isLoading ? 0.78 : 1)
         .background(.quaternary, in: RoundedRectangle(cornerRadius: 7))
         .help(help)
+    }
+}
+
+struct LoadingIcon: View {
+    let systemName: String
+    let isLoading: Bool
+    var size: CGFloat = 13
+
+    var body: some View {
+        ZStack {
+            if isLoading {
+                ProgressView()
+                    .controlSize(.small)
+                    .scaleEffect(0.55)
+            } else {
+                Image(systemName: systemName)
+                    .font(.system(size: size, weight: .semibold))
+            }
+        }
+        .frame(width: 16, height: 16)
     }
 }
 
@@ -573,9 +612,19 @@ struct OutputPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Label(model.outputTitle, systemImage: model.error == nil ? "terminal" : "exclamationmark.triangle")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(model.error == nil ? Color.secondary : Color.red)
+                HStack(spacing: 6) {
+                    if model.isBusy {
+                        ProgressView()
+                            .controlSize(.small)
+                            .scaleEffect(0.55)
+                            .frame(width: 14, height: 14)
+                    } else {
+                        Image(systemName: model.error == nil ? "terminal" : "exclamationmark.triangle")
+                    }
+                    Text(model.outputTitle)
+                }
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(model.error == nil ? Color.secondary : Color.red)
                 Spacer()
                 if model.commandOutput != nil || model.error != nil {
                     Button("Clear") {
@@ -585,6 +634,13 @@ struct OutputPanel: View {
                     .buttonStyle(.plain)
                     .foregroundStyle(.secondary)
                 }
+            }
+
+            if model.isBusy {
+                ProgressView()
+                    .progressViewStyle(.linear)
+                    .controlSize(.small)
+                    .frame(maxWidth: .infinity)
             }
 
             Text(model.visibleOutput)
@@ -626,25 +682,25 @@ struct SettingsView: View {
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
 
             HStack(spacing: 10) {
-                CompactActionButton(title: "Open Folder", systemName: "folder", tone: .blue) {
+                CompactActionButton(title: "Open Folder", systemName: "folder", tone: .blue, isLoading: model.isRunning("open workspace")) {
                     model.openWorkspace()
                 }
-                CompactActionButton(title: "Open Config", systemName: "doc.text", tone: .blue) {
+                CompactActionButton(title: "Open Config", systemName: "doc.text", tone: .blue, isLoading: model.isRunning("open config")) {
                     model.openConfig()
                 }
-                CompactActionButton(title: "Run Doctor", systemName: "stethoscope", tone: .orange) {
+                CompactActionButton(title: "Run Doctor", systemName: "stethoscope", tone: .orange, isLoading: model.isRunning("doctor")) {
                     model.capture("doctor")
                 }
             }
 
             HStack(spacing: 10) {
-                CompactActionButton(title: "Restart Proxy", systemName: "arrow.clockwise", tone: .green) {
+                CompactActionButton(title: "Restart Proxy", systemName: "arrow.clockwise", tone: .green, isLoading: model.isRunning("proxy restart")) {
                     model.run("proxy", "restart")
                 }
-                CompactActionButton(title: "Copy Status", systemName: "doc.on.doc", tone: .primary, subtle: true) {
+                CompactActionButton(title: "Copy Status", systemName: "doc.on.doc", tone: .primary, subtle: true, isLoading: model.isRunning("copy status")) {
                     model.copyStatus()
                 }
-                CompactActionButton(title: "Refresh", systemName: "arrow.clockwise.circle", tone: .primary, subtle: true) {
+                CompactActionButton(title: "Refresh", systemName: "arrow.clockwise.circle", tone: .primary, subtle: true, isLoading: model.isRunning("refresh")) {
                     model.refresh()
                 }
             }
@@ -691,6 +747,7 @@ final class SreeportModel: ObservableObject {
     @Published var outputTitle = "Output"
     @Published var proxyRunning = false
     @Published var proxyPid: Int?
+    @Published private var activeCommands: Set<String> = []
 
     var summary: String {
         if projects.isEmpty { return "No project config loaded" }
@@ -721,62 +778,94 @@ final class SreeportModel: ObservableObject {
         return "Select a project action or open logs to see command output."
     }
 
+    var isBusy: Bool {
+        !activeCommands.isEmpty
+    }
+
+    func isRunning(_ command: String) -> Bool {
+        activeCommands.contains(command)
+    }
+
     func refresh() {
-        let result = runSreeport(["status", "--json"])
-        if result.exitCode != 0 {
-            error = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
-            projects = []
-            return
-        }
-        do {
-            let data = Data(result.output.utf8)
-            let decoded = try JSONDecoder().decode(StatusResponse.self, from: data)
-            projects = decoded.projects
-            error = nil
-            refreshProxy()
-        } catch {
-            self.error = error.localizedDescription
-        }
+        refreshStatus(showActivity: true)
     }
 
     func run(_ args: String...) {
-        let result = runSreeport(args)
         let command = args.joined(separator: " ")
-        if result.exitCode != 0 {
-            error = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
-            commandOutput = nil
-        } else {
-            error = nil
-            commandOutput = normalizedOutput(result.output, command: command)
+        begin(command, message: "Running: sreeport \(command)")
+        executeSreeport(args) { result in
+            self.finish(command)
+            self.handle(result, command: command)
+            self.refreshStatus(showActivity: false)
         }
-        outputTitle = command
-        refresh()
     }
 
     func capture(_ args: String...) {
-        let result = runSreeport(args)
         let command = args.joined(separator: " ")
-        if result.exitCode != 0 {
-            error = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
-            commandOutput = nil
-        } else {
-            error = nil
-            commandOutput = normalizedOutput(result.output, command: command)
+        begin(command, message: "Running: sreeport \(command)")
+        executeSreeport(args) { result in
+            self.finish(command)
+            self.handle(result, command: command)
         }
-        outputTitle = command
     }
 
     func refreshProxy() {
-        let result = runSreeport(["proxy", "status", "--json"])
-        guard result.exitCode == 0,
-              let data = result.output.data(using: .utf8),
-              let decoded = try? JSONDecoder().decode(ProxyStatus.self, from: data) else {
-            proxyRunning = false
-            proxyPid = nil
-            return
+        refreshProxyStatus(showActivity: false)
+    }
+
+    private func refreshStatus(showActivity: Bool) {
+        let command = "refresh"
+        if showActivity {
+            begin(command, message: "Refreshing Sreeport status")
         }
-        proxyRunning = decoded.running
-        proxyPid = decoded.pid
+        executeSreeport(["status", "--json"]) { result in
+            if showActivity {
+                self.finish(command)
+            }
+            guard result.exitCode == 0 else {
+                if showActivity {
+                    self.error = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
+                    self.projects = []
+                }
+                return
+            }
+            do {
+                let data = Data(result.output.utf8)
+                let decoded = try JSONDecoder().decode(StatusResponse.self, from: data)
+                self.projects = decoded.projects
+                if showActivity {
+                    self.error = nil
+                    self.commandOutput = "Status refreshed."
+                    self.outputTitle = "refresh"
+                }
+                self.refreshProxyStatus(showActivity: false)
+            } catch {
+                if showActivity {
+                    self.error = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    private func refreshProxyStatus(showActivity: Bool) {
+        let command = "proxy status"
+        if showActivity {
+            begin(command, message: "Checking proxy status")
+        }
+        executeSreeport(["proxy", "status", "--json"]) { result in
+            if showActivity {
+                self.finish(command)
+            }
+            guard result.exitCode == 0,
+                  let data = result.output.data(using: .utf8),
+                  let decoded = try? JSONDecoder().decode(ProxyStatus.self, from: data) else {
+                self.proxyRunning = false
+                self.proxyPid = nil
+                return
+            }
+            self.proxyRunning = decoded.running
+            self.proxyPid = decoded.pid
+        }
     }
 
     func clearOutput() {
@@ -790,7 +879,7 @@ final class SreeportModel: ObservableObject {
             error = "Workspace path is not configured."
             return
         }
-        openPath(workspace)
+        openPath(workspace, command: "open workspace")
     }
 
     func openConfig() {
@@ -798,36 +887,67 @@ final class SreeportModel: ObservableObject {
             error = "Workspace path is not configured."
             return
         }
-        openPath("\(workspace)/sreeport.config.ts")
+        openPath("\(workspace)/sreeport.config.ts", command: "open config")
     }
 
     func copyStatus() {
-        let result = runSreeport(["status"])
-        if result.exitCode == 0 {
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(result.output, forType: .string)
-            commandOutput = "Copied current status to clipboard."
-            error = nil
-        } else {
-            error = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
-            commandOutput = nil
+        let command = "copy status"
+        begin(command, message: "Copying current status")
+        executeSreeport(["status"]) { result in
+            self.finish(command)
+            if result.exitCode == 0 {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(result.output, forType: .string)
+                self.commandOutput = "Copied current status to clipboard."
+                self.error = nil
+            } else {
+                self.error = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
+                self.commandOutput = nil
+            }
+            self.outputTitle = command
         }
-        outputTitle = "copy status"
     }
 
-    private func openPath(_ path: String) {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-        process.arguments = [path]
-        do {
-            try process.run()
-            commandOutput = "Opened \(path)"
-            error = nil
-        } catch {
-            self.error = error.localizedDescription
-            commandOutput = nil
+    private func openPath(_ path: String, command: String) {
+        begin(command, message: "Opening \(path)")
+        DispatchQueue.global(qos: .userInitiated).async {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+            process.arguments = [path]
+            let result: CommandResult
+            do {
+                try process.run()
+                result = CommandResult(exitCode: 0, output: "Opened \(path)")
+            } catch {
+                result = CommandResult(exitCode: 1, output: error.localizedDescription)
+            }
+            DispatchQueue.main.async {
+                self.finish(command)
+                self.handle(result, command: command)
+            }
         }
-        outputTitle = "open"
+    }
+
+    private func begin(_ command: String, message: String) {
+        activeCommands.insert(command)
+        outputTitle = command
+        commandOutput = message
+        error = nil
+    }
+
+    private func finish(_ command: String) {
+        activeCommands.remove(command)
+    }
+
+    private func handle(_ result: CommandResult, command: String) {
+        if result.exitCode != 0 {
+            error = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
+            commandOutput = nil
+        } else {
+            error = nil
+            commandOutput = normalizedOutput(result.output, command: command)
+        }
+        outputTitle = command
     }
 
     private func normalizedOutput(_ output: String, command: String) -> String {
@@ -836,12 +956,22 @@ final class SreeportModel: ObservableObject {
         return "Completed: sreeport \(command)"
     }
 
-    private func runSreeport(_ args: [String]) -> CommandResult {
-        let process = Process()
+    private func executeSreeport(_ args: [String], completion: @escaping (CommandResult) -> Void) {
         let cli = resolveSreeportCLI()
+        let workspace = resolveWorkspace()
+        DispatchQueue.global(qos: .userInitiated).async {
+            let result = Self.runSreeport(args, cli: cli, workspace: workspace)
+            DispatchQueue.main.async {
+                completion(result)
+            }
+        }
+    }
+
+    private static func runSreeport(_ args: [String], cli: (executable: String, arguments: [String]), workspace: String?) -> CommandResult {
+        let process = Process()
         process.executableURL = URL(fileURLWithPath: cli.executable)
         process.arguments = cli.arguments + args
-        if let workspace = resolveWorkspace() {
+        if let workspace {
             process.currentDirectoryURL = URL(fileURLWithPath: workspace)
         }
         let pipe = Pipe()
