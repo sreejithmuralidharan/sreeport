@@ -1,6 +1,6 @@
 {
   "name": "@sreeport/cli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Command-line interface for Sreeport.",
   "type": "module",
   "author": "Sreejith Muralidharan <hello@sreejith.co.uk> (https://sreejith.co.uk)",
@@ -14,7 +14,8 @@
     "directory": "packages/cli"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/fix-bin.mjs",
@@ -29,5 +30,33 @@
   },
   "devDependencies": {
     "tsx": "^4.21.0"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "homepage": "https://github.com/sreejithmuralidharan/sreeport/tree/main/packages/cli#readme",
+  "keywords": [
+    "sreeport",
+    "cli",
+    "local-development",
+    "dev-server",
+    "ports",
+    "localhost",
+    "caddy",
+    "nextjs"
+  ],
+  "bugs": {
+    "url": "https://github.com/sreejithmuralidharan/sreeport/issues"
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.1.2
+
+- Added package-local npm READMEs for `@sreeport/core`, `@sreeport/cli`, `@sreeport/next`, and `@sreeport/mcp`.
+- Added standard npm package metadata including package homepages, keywords, bugs, engines, publish configuration, type entry points, and explicit README inclusion.
+
 ## 0.1.1
 
 - Redesigned the macOS menu-bar dashboard with metric tiles, clearer project rows, and icon-based actions.

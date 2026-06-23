@@ -1,6 +1,6 @@
 {
   "name": "@sreeport/core",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Core engine for Sreeport local development orchestration.",
   "type": "module",
   "author": "Sreejith Muralidharan <hello@sreejith.co.uk> (https://sreejith.co.uk)",
@@ -17,7 +17,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -29,5 +30,27 @@
     "env-paths": "^3.0.0",
     "jiti": "^2.6.1",
     "zod": "^4.2.1"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "homepage": "https://github.com/sreejithmuralidharan/sreeport/tree/main/packages/core#readme",
+  "keywords": [
+    "sreeport",
+    "local-development",
+    "dev-server",
+    "ports",
+    "localhost",
+    "caddy",
+    "orchestration"
+  ],
+  "sideEffects": false,
+  "bugs": {
+    "url": "https://github.com/sreejithmuralidharan/sreeport/issues"
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@sreeport/next",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Next.js integration helpers for Sreeport.",
   "type": "module",
   "author": "Sreejith Muralidharan <hello@sreejith.co.uk> (https://sreejith.co.uk)",
@@ -17,7 +17,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -35,5 +36,26 @@
     "next": {
       "optional": true
     }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "homepage": "https://github.com/sreejithmuralidharan/sreeport/tree/main/packages/next#readme",
+  "keywords": [
+    "sreeport",
+    "nextjs",
+    "next-config",
+    "local-development",
+    "allowed-dev-origins",
+    "localhost"
+  ],
+  "sideEffects": false,
+  "bugs": {
+    "url": "https://github.com/sreejithmuralidharan/sreeport/issues"
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

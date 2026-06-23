@@ -1,6 +1,6 @@
 {
   "name": "sreeport",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "type": "module",
   "description": "A local development orchestrator with clean ports, local domains, browser routing, and a native macOS menu bar.",

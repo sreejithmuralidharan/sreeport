@@ -9,6 +9,8 @@ The first public release targets GitHub and npm.
 - `@sreeport/next`
 - `@sreeport/mcp`
 
+Each package should include package-specific npm metadata and a package-local `README.md` so npm renders useful install and usage guidance.
+
 ## Preflight
 
 ```bash
@@ -34,9 +36,9 @@ Replace `123456` with a current npm two-factor code. If the `@sreeport` scope do
 
 ```bash
 gh repo create sreejithmuralidharan/sreeport --public --source=. --remote=origin --push
-git tag v0.1.1
-git push origin v0.1.1
-gh release create v0.1.1 --title "Sreeport v0.1.1" --notes-file CHANGELOG.md
+git tag v0.1.2
+git push origin v0.1.2
+gh release create v0.1.2 --title "Sreeport v0.1.2" --notes-file CHANGELOG.md
 ```
 
 ## macOS App

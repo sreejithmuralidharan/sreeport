@@ -28,7 +28,7 @@ const program = new Command();
 program
   .name("sreeport")
   .description("Launch local dev projects with stable ports, local domains, and browser routing.")
-  .version("0.1.1")
+  .version("0.1.2")
   .option("--config-dir <path>", "Use an alternate Sreeport runtime directory for state/config/logs");
 
 program

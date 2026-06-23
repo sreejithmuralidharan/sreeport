@@ -1,6 +1,6 @@
 {
   "name": "@sreeport/mcp",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Model Context Protocol server for Sreeport local development orchestration.",
   "type": "module",
   "author": "Sreejith Muralidharan <hello@sreejith.co.uk> (https://sreejith.co.uk)",
@@ -14,7 +14,8 @@
     "directory": "packages/mcp"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/fix-bin.mjs",
@@ -30,5 +31,32 @@
   },
   "devDependencies": {
     "tsx": "^4.21.0"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "homepage": "https://github.com/sreejithmuralidharan/sreeport/tree/main/packages/mcp#readme",
+  "keywords": [
+    "sreeport",
+    "mcp",
+    "model-context-protocol",
+    "local-development",
+    "dev-server",
+    "ports",
+    "localhost"
+  ],
+  "bugs": {
+    "url": "https://github.com/sreejithmuralidharan/sreeport/issues"
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
