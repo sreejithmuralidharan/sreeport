@@ -7,6 +7,7 @@ The first public release targets GitHub and npm.
 - `@sreeport/core`
 - `@sreeport/cli`
 - `@sreeport/next`
+- `@sreeport/mcp`
 
 ## Preflight
 
@@ -24,8 +25,10 @@ You must be logged in to npm and have access to the `@sreeport` scope.
 
 ```bash
 npm whoami
-pnpm -r --filter './packages/*' publish --access public
+pnpm -r --filter './packages/*' publish --access public --otp 123456
 ```
+
+Replace `123456` with a current npm two-factor code. If the `@sreeport` scope does not exist yet, create the `sreeport` npm organization first and make sure your user is an owner.
 
 ## GitHub
 

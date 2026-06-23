@@ -8,6 +8,7 @@ The product shape is simple:
 
 - a cross-platform core and CLI
 - framework integrations, starting with Next.js
+- MCP integration for assistant-driven project control
 - a native macOS menu-bar app for daily control
 - Caddy-powered local routing
 - plain, portable project config
@@ -56,6 +57,29 @@ Check health:
 sreeport status
 sreeport doctor
 ```
+
+## MCP
+
+Install the MCP server when you want an MCP-capable assistant or tool to inspect status, start/stop projects, read logs, run doctor checks, and manage the Sreeport proxy.
+
+```bash
+npm install -g @sreeport/mcp
+```
+
+Example MCP client configuration:
+
+```json
+{
+  "mcpServers": {
+    "sreeport": {
+      "command": "sreeport-mcp",
+      "args": ["--cwd", "/path/to/workspace"]
+    }
+  }
+}
+```
+
+See [docs/mcp.md](docs/mcp.md) for the full tool list and configuration notes.
 
 ## Example Config
 

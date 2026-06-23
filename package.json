@@ -25,7 +25,7 @@
     "lint": "eslint .",
     "pack:dry": "pnpm -r --filter './packages/*' pack --dry-run",
     "test": "vitest run",
-    "typecheck": "tsc -b packages/core packages/cli packages/next"
+    "typecheck": "tsc -b packages/core packages/cli packages/next packages/mcp"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
