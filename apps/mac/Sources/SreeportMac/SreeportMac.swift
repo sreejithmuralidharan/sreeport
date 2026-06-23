@@ -8,7 +8,7 @@ struct SreeportMacApp: App {
     var body: some Scene {
         MenuBarExtra {
             SreeportMenu(model: model)
-                .frame(width: 360)
+                .frame(width: 460, height: 640)
                 .onAppear {
                     model.refresh()
                 }
@@ -33,53 +33,131 @@ struct SreeportMenu: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 16) {
+            HeaderView(model: model)
+
+            HStack(spacing: 10) {
+                MetricTile(title: "Running", value: "\(model.runningCount)", tone: .green)
+                MetricTile(title: "Projects", value: "\(model.projects.count)", tone: .blue)
+                MetricTile(title: "Issues", value: "\(model.issueCount)", tone: model.issueCount == 0 ? .secondary : .orange)
+            }
+
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+                TextField("Search projects", text: $query)
+                    .textFieldStyle(.plain)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .background(.quaternary, in: RoundedRectangle(cornerRadius: 10))
+
+            ActionBar(model: model)
+
             HStack {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Sreeport")
-                        .font(.headline)
-                    Text(model.summary)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                Text("Projects")
+                    .font(.subheadline.weight(.semibold))
                 Spacer()
-                Button {
-                    model.refresh()
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                }
-                .buttonStyle(.borderless)
-                .help("Refresh")
+                Text(model.summary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-
-            TextField("Search projects", text: $query)
-                .textFieldStyle(.roundedBorder)
-
-            HStack {
-                Button("Start All") { model.run("start", "all") }
-                Button("Stop All") { model.run("stop", "all") }
-                Button("Proxy") { model.run("proxy", "restart") }
-            }
-
-            Divider()
 
             ScrollView {
-                VStack(spacing: 8) {
-                    ForEach(filteredProjects) { project in
-                        ProjectRow(project: project, model: model)
+                LazyVStack(spacing: 10) {
+                    if filteredProjects.isEmpty {
+                        EmptyState(query: query)
+                    } else {
+                        ForEach(filteredProjects) { project in
+                            ProjectRow(project: project, model: model)
+                        }
                     }
                 }
+                .padding(.vertical, 2)
             }
-            .frame(maxHeight: 420)
+            .frame(minHeight: 260, maxHeight: 330)
 
-            if let error = model.error {
-                Text(error)
+            OutputPanel(model: model)
+        }
+        .padding(18)
+        .background(Color(nsColor: .windowBackgroundColor))
+    }
+}
+
+struct HeaderView: View {
+    @ObservedObject var model: SreeportModel
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(LinearGradient(colors: [Color.teal.opacity(0.22), Color.blue.opacity(0.18)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                Image(nsImage: SreeportIcon.menuBarImage())
+                    .resizable()
+                    .frame(width: 22, height: 22)
+                    .foregroundStyle(.primary)
+            }
+            .frame(width: 44, height: 44)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Sreeport")
+                    .font(.title3.weight(.bold))
+                Text(model.workspaceLabel)
                     .font(.caption)
-                    .foregroundStyle(.red)
-                    .lineLimit(3)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            Spacer()
+            IconButton(systemName: "arrow.clockwise", help: "Refresh") {
+                model.refresh()
             }
         }
-        .padding(14)
+    }
+}
+
+struct MetricTile: View {
+    let title: String
+    let value: String
+    let tone: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(.secondary)
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Circle()
+                    .fill(tone)
+                    .frame(width: 7, height: 7)
+                Text(value)
+                    .font(.headline.monospacedDigit())
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(10)
+        .background(.quaternary, in: RoundedRectangle(cornerRadius: 10))
+    }
+}
+
+struct ActionBar: View {
+    @ObservedObject var model: SreeportModel
+
+    var body: some View {
+        HStack(spacing: 8) {
+            PrimaryActionButton(title: "Start All", systemName: "play.fill") {
+                model.run("start", "all")
+            }
+            PrimaryActionButton(title: "Stop All", systemName: "stop.fill") {
+                model.run("stop", "all")
+            }
+            PrimaryActionButton(title: "Proxy", systemName: "point.3.connected.trianglepath.dotted") {
+                model.run("proxy", "restart")
+            }
+            IconButton(systemName: "gearshape", help: "Open Settings") {
+                NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+            }
+        }
     }
 }
 
@@ -88,35 +166,179 @@ struct ProjectRow: View {
     @ObservedObject var model: SreeportModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Circle()
-                    .fill(project.listening ? Color.green : (project.running ? Color.orange : Color.gray))
-                    .frame(width: 9, height: 9)
-                VStack(alignment: .leading, spacing: 2) {
+                StatusGlyph(project: project)
+                VStack(alignment: .leading, spacing: 3) {
                     Text(project.name)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                     Text(project.domain)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
                 }
                 Spacer()
-                Text(String(project.port))
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                VStack(alignment: .trailing, spacing: 3) {
+                    Text(project.stateLabel)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(project.stateColor)
+                    Text(":\(project.port)")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
             }
 
-            HStack {
-                Button("Start") { model.run("start", project.name) }
-                Button("Stop") { model.run("stop", project.name) }
-                Button("Restart") { model.run("restart", project.name) }
-                Button("Open") { model.run("open", project.name) }
-                Button("Logs") { model.run("logs", project.name) }
+            HStack(spacing: 7) {
+                MiniActionButton(title: "Open", systemName: "safari") { model.run("open", project.name) }
+                MiniIconButton(systemName: "play.fill", help: "Start \(project.name)") { model.run("start", project.name) }
+                MiniIconButton(systemName: "arrow.clockwise", help: "Restart \(project.name)") { model.run("restart", project.name) }
+                MiniIconButton(systemName: "stop.fill", help: "Stop \(project.name)") { model.run("stop", project.name) }
+                MiniIconButton(systemName: "doc.text.magnifyingglass", help: "Show logs for \(project.name)") { model.capture("logs", project.name) }
             }
-            .font(.caption)
         }
-        .padding(10)
-        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
+        .padding(12)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(project.stateColor.opacity(0.18), lineWidth: 1)
+        )
+    }
+}
+
+struct StatusGlyph: View {
+    let project: ProjectStatus
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(project.stateColor.opacity(0.16))
+            Circle()
+                .fill(project.stateColor)
+                .frame(width: 9, height: 9)
+        }
+        .frame(width: 24, height: 24)
+    }
+}
+
+struct PrimaryActionButton: View {
+    let title: String
+    let systemName: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label(title, systemImage: systemName)
+                .font(.caption.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 7)
+        }
+        .buttonStyle(.plain)
+        .background(.quaternary, in: RoundedRectangle(cornerRadius: 9))
+    }
+}
+
+struct MiniActionButton: View {
+    let title: String
+    let systemName: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label(title, systemImage: systemName)
+                .font(.caption.weight(.medium))
+                .padding(.horizontal, 9)
+                .padding(.vertical, 5)
+        }
+        .buttonStyle(.plain)
+        .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 7))
+        .help(title)
+    }
+}
+
+struct IconButton: View {
+    let systemName: String
+    let help: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 15, weight: .semibold))
+                .frame(width: 32, height: 32)
+        }
+        .buttonStyle(.plain)
+        .background(.quaternary, in: RoundedRectangle(cornerRadius: 9))
+        .help(help)
+    }
+}
+
+struct MiniIconButton: View {
+    let systemName: String
+    let help: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 12, weight: .semibold))
+                .frame(width: 26, height: 24)
+        }
+        .buttonStyle(.plain)
+        .background(.quaternary, in: RoundedRectangle(cornerRadius: 7))
+        .help(help)
+    }
+}
+
+struct EmptyState: View {
+    let query: String
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "tray")
+                .font(.title2)
+                .foregroundStyle(.secondary)
+            Text(query.isEmpty ? "No projects configured" : "No matching projects")
+                .font(.subheadline.weight(.semibold))
+            Text(query.isEmpty ? "Add projects with sreeport.config.ts." : "Try a different name or domain.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 36)
+        .background(.quaternary, in: RoundedRectangle(cornerRadius: 12))
+    }
+}
+
+struct OutputPanel: View {
+    @ObservedObject var model: SreeportModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Label(model.outputTitle, systemImage: model.error == nil ? "terminal" : "exclamationmark.triangle")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(model.error == nil ? Color.secondary : Color.red)
+                Spacer()
+                if model.commandOutput != nil || model.error != nil {
+                    Button("Clear") {
+                        model.clearOutput()
+                    }
+                    .font(.caption)
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                }
+            }
+
+            Text(model.visibleOutput)
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundStyle(model.error == nil ? Color.secondary : Color.red)
+                .lineLimit(4)
+                .frame(maxWidth: .infinity, minHeight: 48, alignment: .topLeading)
+                .padding(10)
+                .textSelection(.enabled)
+                .background(Color(nsColor: .textBackgroundColor).opacity(0.7), in: RoundedRectangle(cornerRadius: 10))
+        }
     }
 }
 
@@ -143,11 +365,32 @@ struct SettingsView: View {
 final class SreeportModel: ObservableObject {
     @Published var projects: [ProjectStatus] = []
     @Published var error: String?
+    @Published var commandOutput: String?
+    @Published var outputTitle = "Output"
 
     var summary: String {
         if projects.isEmpty { return "No project config loaded" }
         let running = projects.filter(\.running).count
         return "\(running) of \(projects.count) running"
+    }
+
+    var runningCount: Int {
+        projects.filter(\.running).count
+    }
+
+    var issueCount: Int {
+        projects.filter { !$0.listening }.count
+    }
+
+    var workspaceLabel: String {
+        guard let workspace = resolveWorkspace() else { return "Workspace not selected" }
+        return (workspace as NSString).abbreviatingWithTildeInPath
+    }
+
+    var visibleOutput: String {
+        if let error, !error.isEmpty { return error }
+        if let commandOutput, !commandOutput.isEmpty { return commandOutput }
+        return "Select a project action or open logs to see command output."
     }
 
     func refresh() {
@@ -171,10 +414,31 @@ final class SreeportModel: ObservableObject {
         let result = runSreeport(args)
         if result.exitCode != 0 {
             error = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
+            commandOutput = nil
         } else {
             error = nil
+            commandOutput = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
         }
+        outputTitle = args.joined(separator: " ")
         refresh()
+    }
+
+    func capture(_ args: String...) {
+        let result = runSreeport(args)
+        if result.exitCode != 0 {
+            error = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
+            commandOutput = nil
+        } else {
+            error = nil
+            commandOutput = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        outputTitle = args.joined(separator: " ")
+    }
+
+    func clearOutput() {
+        error = nil
+        commandOutput = nil
+        outputTitle = "Output"
     }
 
     private func runSreeport(_ args: [String]) -> CommandResult {
@@ -250,6 +514,18 @@ struct ProjectStatus: Decodable, Identifiable {
     let listening: Bool
     let url: String
     let logPath: String
+
+    var stateLabel: String {
+        if listening { return "Live" }
+        if running { return "Starting" }
+        return "Stopped"
+    }
+
+    var stateColor: Color {
+        if listening { return .green }
+        if running { return .orange }
+        return .secondary
+    }
 }
 
 enum SreeportIcon {
