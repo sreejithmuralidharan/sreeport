@@ -2,7 +2,19 @@
 
 Next.js integration helpers for Sreeport.
 
-Use this package to keep Next.js development origins aligned with the stable ports and `.localhost` domains managed by Sreeport.
+Sreeport is a local development orchestrator that gives projects stable ports, `.localhost` domains, Caddy routing, browser preferences, logs, and start/stop/restart workflows.
+
+Use `@sreeport/next` when a Next.js project needs to understand the same local domain and port that Sreeport uses to launch it.
+
+## Which Package Should I Install?
+
+For day-to-day Sreeport usage, install the CLI:
+
+```bash
+npm install -g @sreeport/cli
+```
+
+Install this package inside a Next.js app when you want a `next.config` helper.
 
 ## Install
 
@@ -10,7 +22,23 @@ Use this package to keep Next.js development origins aligned with the stable por
 npm install -D @sreeport/next
 ```
 
-## Next Config
+## What This Package Does
+
+`@sreeport/next` provides `withSreeportNextConfig`, a small helper that adds Sreeport dev origins to Next.js config.
+
+That helps when your dev app is reached through a local domain such as:
+
+```text
+http://web.localhost
+```
+
+while the underlying Next.js server is listening on:
+
+```text
+http://127.0.0.1:3100
+```
+
+## Usage
 
 ```ts
 import { withSreeportNextConfig } from "@sreeport/next";
@@ -30,7 +58,7 @@ export default nextConfig;
 
 The helper adds local development origins for the configured domain and loopback port.
 
-## Sreeport Config
+## Sreeport Project Config
 
 Create a project config with the CLI:
 
@@ -67,6 +95,15 @@ If your app needs setup before Next starts, add a custom `command` in `sreeport.
 ```ts
 command: "prisma generate && next dev -p 3100 -H 127.0.0.1"
 ```
+
+## Package Map
+
+| Package | Use it for |
+| --- | --- |
+| `@sreeport/cli` | Daily terminal usage. |
+| `@sreeport/core` | Programmatic API and shared engine. |
+| `@sreeport/next` | Next.js config helper. |
+| `@sreeport/mcp` | MCP server for assistant/tool access. |
 
 ## Privacy
 

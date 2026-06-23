@@ -2,12 +2,33 @@
 
 Model Context Protocol server for Sreeport.
 
-Use this package when an MCP-capable assistant or local tool needs to inspect and control Sreeport projects through the same core behavior as the CLI.
+Sreeport is a local development orchestrator that gives projects stable ports, `.localhost` domains, Caddy routing, browser preferences, logs, and start/stop/restart workflows.
+
+Use `@sreeport/mcp` when an MCP-capable assistant or local tool should inspect and control Sreeport projects through the same core behavior as the CLI.
+
+## What This Package Does
+
+This package starts a stdio MCP server named `sreeport`. MCP clients can use it to:
+
+- list configured projects and current process state
+- start, stop, and restart projects
+- open project URLs in configured browsers
+- read recent project logs
+- run Sreeport doctor checks
+- inspect and manage the Sreeport Caddy proxy
+
+The server does not create its own project mappings. It reads the `sreeport.config.*` file from the workspace you provide with `--cwd`.
 
 ## Install
 
 ```bash
 npm install -g @sreeport/mcp
+```
+
+For day-to-day terminal usage, install the CLI as well:
+
+```bash
+npm install -g @sreeport/cli
 ```
 
 ## Client Configuration
@@ -52,6 +73,25 @@ The server exposes these tools:
 | `sreeport_logs` | Read recent logs for a project. |
 | `sreeport_doctor` | Check local requirements and mappings. |
 | `sreeport_proxy` | Run proxy `status`, `write`, `start`, `stop`, or `restart`. |
+
+## Example Prompt
+
+After configuring the MCP server, an MCP-capable assistant can answer prompts such as:
+
+```text
+Which Sreeport projects are running?
+Restart the web project and show me its latest logs.
+Run doctor and tell me what is misconfigured.
+```
+
+## Package Map
+
+| Package | Use it for |
+| --- | --- |
+| `@sreeport/cli` | Daily terminal usage. |
+| `@sreeport/core` | Programmatic API and shared engine. |
+| `@sreeport/next` | Next.js config helper. |
+| `@sreeport/mcp` | MCP server for assistant/tool access. |
 
 ## Privacy
 

@@ -1,6 +1,6 @@
 {
   "name": "@sreeport/next",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Next.js integration helpers for Sreeport.",
   "type": "module",
   "author": "Sreejith Muralidharan <hello@sreejith.co.uk> (https://sreejith.co.uk)",

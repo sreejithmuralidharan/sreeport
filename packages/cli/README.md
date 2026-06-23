@@ -1,8 +1,18 @@
 # @sreeport/cli
 
-Command-line interface for Sreeport.
+Command-line interface for Sreeport, a local development orchestrator for people who run many projects at once.
 
-Sreeport gives local development projects stable ports, `.localhost` domains, Caddy routing, browser preferences, logs, and start/stop/restart commands.
+Sreeport gives each app a stable port, a clean `.localhost` domain, a browser preference, logs, health state, and predictable start/stop/restart commands. It is especially useful when you have multiple Next.js or full-stack projects running in parallel and port management has become hard to reason about.
+
+## What You Get
+
+- stable local domains such as `web.localhost` and `api.localhost`
+- explicit ports instead of random fallback ports
+- Caddy-powered reverse proxy config
+- start, stop, restart, open, status, and logs commands
+- per-project browser routing
+- project-local `sreeport.config.ts`
+- cross-platform core with a macOS menu-bar app available in the repo
 
 ## Install
 
@@ -10,7 +20,7 @@ Sreeport gives local development projects stable ports, `.localhost` domains, Ca
 npm install -g @sreeport/cli
 ```
 
-## Quick Start
+## Quick Start: One Project
 
 Create a Sreeport config in a project:
 
@@ -36,6 +46,49 @@ Open the project:
 sreeport open web
 ```
 
+Check health and logs:
+
+```bash
+sreeport status
+sreeport logs web
+sreeport doctor
+```
+
+## Quick Start: Multiple Projects
+
+Create a workspace-level `sreeport.config.ts` with several projects:
+
+```ts
+export default {
+  projects: [
+    {
+      name: "web",
+      domain: "web.localhost",
+      port: 3100,
+      cwd: "../web",
+      framework: "next",
+      browser: "chrome"
+    },
+    {
+      name: "api",
+      domain: "api.localhost",
+      port: 3101,
+      cwd: "../api",
+      command: "npm run dev",
+      framework: "custom"
+    }
+  ]
+} satisfies import("@sreeport/core").SreeportConfig;
+```
+
+Then run everything:
+
+```bash
+sreeport start all
+sreeport proxy restart
+sreeport status
+```
+
 ## Commands
 
 ```bash
@@ -52,21 +105,19 @@ sreeport doctor
 sreeport next init
 ```
 
-## Example Config
+## Config Fields
 
-```ts
-export default {
-  projects: [
-    {
-      name: "web",
-      domain: "web.localhost",
-      port: 3100,
-      framework: "next",
-      browser: "chrome"
-    }
-  ]
-} satisfies import("@sreeport/core").SreeportConfig;
-```
+| Field | Description |
+| --- | --- |
+| `name` | Stable project id used by CLI commands. |
+| `domain` | Local domain, usually ending in `.localhost`. |
+| `port` | Port the app should listen on. |
+| `cwd` | Working directory for the command. Defaults to the config directory. |
+| `command` | Optional custom dev command. |
+| `framework` | `next`, `vite`, or `custom`. |
+| `browser` | `default`, `safari`, `chrome`, `arc`, `firefox`, `bundle:*`, or `app:*`. |
+| `env` | Extra environment variables for the dev process. |
+| `visible` | Hide a project from UI while keeping it configured. |
 
 ## Caddy
 
@@ -81,6 +132,17 @@ Then run:
 ```bash
 sreeport proxy start
 ```
+
+Sreeport writes its own generated Caddyfile and adds a fallback `404` for unmapped hosts.
+
+## Package Map
+
+| Package | Use it for |
+| --- | --- |
+| `@sreeport/cli` | Daily terminal usage. |
+| `@sreeport/core` | Programmatic API and shared engine. |
+| `@sreeport/next` | Next.js config helper. |
+| `@sreeport/mcp` | MCP server for assistant/tool access. |
 
 ## Privacy
 

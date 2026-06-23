@@ -28,7 +28,7 @@ interface ServerOptions {
 const options = parseArgs(process.argv.slice(2));
 const server = new McpServer({
   name: "sreeport",
-  version: "0.1.2"
+  version: "0.1.3"
 });
 
 server.registerTool(

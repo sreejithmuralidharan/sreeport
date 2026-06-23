@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.1.3
+
+- Reworked npm package READMEs to explain what Sreeport does, which package to install, and how each package fits into the product.
+- Added clearer package maps, workflows, and examples for the CLI, core API, Next.js helper, and MCP server package pages.
+
 ## 0.1.2
 
 - Added package-local npm READMEs for `@sreeport/core`, `@sreeport/cli`, `@sreeport/next`, and `@sreeport/mcp`.

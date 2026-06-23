@@ -17,7 +17,7 @@ Sreeport is designed to be useful without becoming a heavy container platform or
 
 ## Status
 
-Sreeport is currently `0.1.2` and under active development. The CLI/core are the stable foundation; the macOS app is a native shell scaffold that will grow into the primary UI.
+Sreeport is currently `0.1.3` and under active development. The CLI/core are the stable foundation; the macOS app is a native shell scaffold that will grow into the primary UI.
 
 ## Quick Start
 
