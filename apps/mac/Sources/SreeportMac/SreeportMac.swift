@@ -182,6 +182,9 @@ final class SreeportModel: ObservableObject {
         let cli = resolveSreeportCLI()
         process.executableURL = URL(fileURLWithPath: cli.executable)
         process.arguments = cli.arguments + args
+        if let workspace = resolveWorkspace() {
+            process.currentDirectoryURL = URL(fileURLWithPath: workspace)
+        }
         let pipe = Pipe()
         process.standardOutput = pipe
         process.standardError = pipe
@@ -204,6 +207,27 @@ final class SreeportModel: ObservableObject {
             return (candidate, [])
         }
         return ("/usr/bin/env", ["sreeport"])
+    }
+
+    private func resolveWorkspace() -> String? {
+        if let envWorkspace = ProcessInfo.processInfo.environment["SREEPORT_WORKSPACE"], !envWorkspace.isEmpty {
+            return envWorkspace
+        }
+
+        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+        let workspaceFile = support?
+            .appendingPathComponent("Sreeport", isDirectory: true)
+            .appendingPathComponent("workspace", isDirectory: false)
+
+        if let workspaceFile,
+           let content = try? String(contentsOf: workspaceFile, encoding: .utf8) {
+            let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty {
+                return trimmed
+            }
+        }
+
+        return nil
     }
 }
 

@@ -19,6 +19,7 @@
     "build": "pnpm -r --filter './packages/*' build && pnpm --filter @sreeport/mac build",
     "build:packages": "pnpm -r --filter './packages/*' build",
     "build:mac": "pnpm --filter @sreeport/mac build",
+    "package:mac": "node scripts/package-macos-app.mjs",
     "clean": "pnpm -r clean && rm -rf node_modules",
     "dev": "pnpm --filter @sreeport/cli dev",
     "lint": "eslint .",
